@@ -48,10 +48,10 @@ function Carrinho() {
     });
   };
 
-  const aumentarQuantidade = (id) => {
+  const aumentarQuantidade = (chaveItem) => {
     setCarrinho((carrinhoAtual) =>
       carrinhoAtual.map((item) =>
-        String(item.id) === String(id)
+        item.chaveItem === chaveItem
           ? {
               ...item,
               quantidade: item.quantidade + 1,
@@ -61,11 +61,11 @@ function Carrinho() {
     );
   };
 
-  const diminuirQuantidade = (id) => {
+  const diminuirQuantidade = (chaveItem) => {
     setCarrinho((carrinhoAtual) =>
       carrinhoAtual
         .map((item) =>
-          String(item.id) === String(id)
+          item.chaveItem === chaveItem
             ? {
                 ...item,
                 quantidade: item.quantidade - 1,
@@ -109,6 +109,8 @@ function Carrinho() {
       return {
         ...produto,
         quantidade: itemCarrinho.quantidade,
+        variacoesSelecionadas: itemCarrinho.variacoesSelecionadas || {},
+        chaveItem: itemCarrinho.chaveItem,
       };
     })
     .filter(Boolean);
@@ -163,6 +165,9 @@ function Carrinho() {
 
           return [
             `${item.quantidade}x ${item.nome}`,
+            ...Object.entries(item.variacoesSelecionadas || {}).map(
+              ([nome, valor]) => `${nome}: ${valor}`
+            ),
             `Preço unitário: ${item.preco}`,
             `Subtotal: ${formatarPreco(subtotal)}`,
           ].join("\n");
@@ -258,7 +263,7 @@ ${cliente.observacoes.trim() || "Nenhuma observação"}
               return (
                 <article
                   className="cart-item"
-                  key={item.id}
+                  key={item.chaveItem}
                 >
                   <Link
                     to={`/produto/${item.id}`}
@@ -282,11 +287,19 @@ ${cliente.observacoes.trim() || "Nenhuma observação"}
 
                     <strong>{item.preco}</strong>
 
+                    {Object.keys(item.variacoesSelecionadas || {}).length > 0 && (
+                      <div className="cart-item-variations">
+                        {Object.entries(item.variacoesSelecionadas).map(([nome, valor]) => (
+                          <span key={nome}><strong>{nome}:</strong> {valor}</span>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="cart-quantity">
                       <button
                         type="button"
                         onClick={() =>
-                          diminuirQuantidade(item.id)
+                          diminuirQuantidade(item.chaveItem)
                         }
                         disabled={finalizando}
                         aria-label={`Diminuir quantidade de ${item.nome}`}
@@ -299,7 +312,7 @@ ${cliente.observacoes.trim() || "Nenhuma observação"}
                       <button
                         type="button"
                         onClick={() =>
-                          aumentarQuantidade(item.id)
+                          aumentarQuantidade(item.chaveItem)
                         }
                         disabled={finalizando}
                         aria-label={`Aumentar quantidade de ${item.nome}`}
@@ -320,7 +333,7 @@ ${cliente.observacoes.trim() || "Nenhuma observação"}
                     type="button"
                     className="remove-item"
                     onClick={() =>
-                      removerDoCarrinho(item.id)
+                      removerDoCarrinho(item.chaveItem)
                     }
                     disabled={finalizando}
                   >

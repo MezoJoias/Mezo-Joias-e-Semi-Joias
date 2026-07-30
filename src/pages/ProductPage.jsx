@@ -7,167 +7,143 @@ import { ProductsContext } from "../context/ProductsContext";
 
 function ProductPage() {
   const { id } = useParams();
-
   const { produtos } = useContext(ProductsContext);
   const { adicionarAoCarrinho } = useContext(CartContext);
+  const [imagemSelecionada, setImagemSelecionada] = useState("");
+  const [variacoesSelecionadas, setVariacoesSelecionadas] = useState({});
 
-  const produto = produtos.find(
-    (item) => String(item.id) === String(id)
-  );
-
-  const [imagemSelecionada, setImagemSelecionada] =
-    useState("");
+  const produto = produtos.find((item) => String(item.id) === String(id));
 
   useEffect(() => {
-    if (!produto) {
-      return;
-    }
-
-    const primeiraImagem =
-      produto.imagens?.[0] || produto.imagem;
-
-    setImagemSelecionada(primeiraImagem);
+    if (!produto) return;
+    setImagemSelecionada(produto.imagens?.[0] || produto.imagem);
+    setVariacoesSelecionadas({});
   }, [produto]);
 
   if (!produto) {
     return (
       <main className="product-not-found">
         <h1>Produto não encontrado</h1>
-
-        <p>
-          Esse produto não existe ou foi removido.
-        </p>
-
-        <Link to="/">
-          Voltar para a loja
-        </Link>
+        <p>Esse produto não existe ou foi removido.</p>
+        <Link to="/">Voltar para a loja</Link>
       </main>
     );
   }
 
+  const variacoes = Array.isArray(produto.variacoes) ? produto.variacoes : [];
   const imagensDoProduto =
-    produto.imagens?.length > 0
-      ? produto.imagens
-      : [produto.imagem];
-
+    produto.imagens?.length > 0 ? produto.imagens : [produto.imagem];
   const produtosRelacionados = produtos
     .filter(
       (item) =>
-        item.categoria === produto.categoria &&
-        item.id !== produto.id
+        item.categoria === produto.categoria && item.id !== produto.id
     )
     .slice(0, 3);
 
-  const adicionarProduto = () => {
-    adicionarAoCarrinho(produto.id);
-
-    alert(
-      `${produto.nome} foi adicionado ao carrinho!`
+  const validarVariacoes = () => {
+    const faltando = variacoes.find(
+      (variacao) => !variacoesSelecionadas[variacao.nome]
     );
+    if (faltando) {
+      alert(`Selecione a opção de ${faltando.nome}.`);
+      return false;
+    }
+    return true;
+  };
+
+  const adicionarProduto = () => {
+    if (!validarVariacoes()) return;
+    adicionarAoCarrinho(produto.id, variacoesSelecionadas);
+    alert(`${produto.nome} foi adicionado ao carrinho!`);
   };
 
   const comprarPeloWhatsApp = () => {
+    if (!validarVariacoes()) return;
     const telefone = "5551980486979";
-
+    const textoVariacoes = Object.entries(variacoesSelecionadas)
+      .map(([nome, valor]) => `${nome}: ${valor}`)
+      .join("\n");
     const mensagem = `
 Olá! Tenho interesse neste produto:
 
 Produto: ${produto.nome}
 Código: ${produto.id}
-Preço: ${produto.preco}
+${textoVariacoes ? `${textoVariacoes}\n` : ""}Preço: ${produto.preco}
     `.trim();
-
-    const link = `https://wa.me/${telefone}?text=${encodeURIComponent(
-      mensagem
-    )}`;
-
-    window.open(link, "_blank");
+    window.open(
+      `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`,
+      "_blank"
+    );
   };
 
   return (
     <>
       <main className="product-page">
-        <Link
-          to="/"
-          className="back-link"
-        >
-          ← Voltar para os produtos
-        </Link>
+        <Link to="/" className="back-link">← Voltar para os produtos</Link>
 
         <div className="product-details">
           <section className="product-gallery">
             <div className="product-main-image">
-              <img
-                src={imagemSelecionada}
-                alt={produto.nome}
-              />
+              <img src={imagemSelecionada} alt={produto.nome} />
             </div>
 
             {imagensDoProduto.length > 1 && (
               <div className="product-thumbnails">
-                {imagensDoProduto.map(
-                  (imagem, index) => (
-                    <button
-                      type="button"
-                      key={`${produto.id}-${index}`}
-                      className={
-                        imagemSelecionada === imagem
-                          ? "thumbnail-button active"
-                          : "thumbnail-button"
-                      }
-                      onClick={() =>
-                        setImagemSelecionada(imagem)
-                      }
-                      aria-label={`Ver imagem ${
-                        index + 1
-                      } de ${produto.nome}`}
-                    >
-                      <img
-                        src={imagem}
-                        alt={`${produto.nome} ${
-                          index + 1
-                        }`}
-                      />
-                    </button>
-                  )
-                )}
+                {imagensDoProduto.map((imagem, index) => (
+                  <button
+                    type="button"
+                    key={`${produto.id}-${index}`}
+                    className={
+                      imagemSelecionada === imagem
+                        ? "thumbnail-button active"
+                        : "thumbnail-button"
+                    }
+                    onClick={() => setImagemSelecionada(imagem)}
+                    aria-label={`Ver imagem ${index + 1} de ${produto.nome}`}
+                  >
+                    <img src={imagem} alt={`${produto.nome} ${index + 1}`} />
+                  </button>
+                ))}
               </div>
             )}
           </section>
 
           <section className="product-info">
-            <p className="product-category">
-              {produto.categoria}
-            </p>
-
+            <p className="product-category">{produto.categoria}</p>
             <h1>{produto.nome}</h1>
+            <p className="product-code">Código do produto: {produto.id}</p>
+            <p className="product-description">{produto.descricao}</p>
+            <strong className="product-page-price">{produto.preco}</strong>
 
-            <p className="product-code">
-              Código do produto: {produto.id}
-            </p>
-
-            <p className="product-description">
-              {produto.descricao}
-            </p>
-
-            <strong className="product-page-price">
-              {produto.preco}
-            </strong>
+            {variacoes.length > 0 && (
+              <div className="product-variations">
+                {variacoes.map((variacao) => (
+                  <label className="product-variation" key={variacao.nome}>
+                    <span>{variacao.nome}</span>
+                    <select
+                      value={variacoesSelecionadas[variacao.nome] || ""}
+                      onChange={(evento) =>
+                        setVariacoesSelecionadas((estadoAtual) => ({
+                          ...estadoAtual,
+                          [variacao.nome]: evento.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Selecione</option>
+                      {(variacao.opcoes || []).map((opcao) => (
+                        <option key={opcao} value={opcao}>{opcao}</option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+              </div>
+            )}
 
             <div className="product-page-actions">
-              <button
-                type="button"
-                className="add-cart-button"
-                onClick={adicionarProduto}
-              >
+              <button type="button" className="add-cart-button" onClick={adicionarProduto}>
                 Adicionar ao carrinho
               </button>
-
-              <button
-                type="button"
-                className="whatsapp-buy-button"
-                onClick={comprarPeloWhatsApp}
-              >
+              <button type="button" className="whatsapp-buy-button" onClick={comprarPeloWhatsApp}>
                 Comprar pelo WhatsApp
               </button>
             </div>
@@ -187,24 +163,19 @@ Preço: ${produto.preco}
             <span>Você também pode gostar</span>
             <h2>Produtos relacionados</h2>
           </div>
-
           <div className="products-grid">
-            {produtosRelacionados.map(
-              (produtoRelacionado) => (
-                <ProductCard
-                  key={produtoRelacionado.id}
-                  id={produtoRelacionado.id}
-                  nome={produtoRelacionado.nome}
-                  preco={produtoRelacionado.preco}
-                  imagem={produtoRelacionado.imagem}
-                  descricao={
-                    produtoRelacionado.descricao
-                  }
-                  favorito={false}
-                  aoFavoritar={() => {}}
-                />
-              )
-            )}
+            {produtosRelacionados.map((produtoRelacionado) => (
+              <ProductCard
+                key={produtoRelacionado.id}
+                id={produtoRelacionado.id}
+                nome={produtoRelacionado.nome}
+                preco={produtoRelacionado.preco}
+                imagem={produtoRelacionado.imagem}
+                descricao={produtoRelacionado.descricao}
+                favorito={false}
+                aoFavoritar={() => {}}
+              />
+            ))}
           </div>
         </section>
       )}

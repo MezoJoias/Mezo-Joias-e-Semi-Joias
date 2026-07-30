@@ -43,6 +43,7 @@ export async function criarPedido({ cliente, itens, total }) {
     preco: item.preco,
     quantidade: item.quantidade,
     imagem: item.imagem || "",
+    variacoes: item.variacoesSelecionadas || {},
   }));
 
   const { error: erroItens } = await supabase

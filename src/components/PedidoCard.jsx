@@ -71,6 +71,13 @@ function PedidoCard({ pedido, aberto, aoAlternar, aoAtualizarStatus, aoExcluir, 
                   <div className="pedido-item-info">
                     <strong>{item.nome}</strong>
                     <span>{item.quantidade}x {item.preco}</span>
+                    {item.variacoes && Object.entries(item.variacoes).length > 0 && (
+                      <div className="pedido-item-variacoes">
+                        {Object.entries(item.variacoes).map(([nome, valor]) => (
+                          <small key={nome}><strong>{nome}:</strong> {valor}</small>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <strong>{formatarMoeda(subtotal)}</strong>
                 </div>

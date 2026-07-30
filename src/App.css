@@ -2323,3 +2323,85 @@ select option {
     min-height: auto;
   }
 }
+/* VARIAÇÕES E CATEGORIA DO ADMIN */
+.admin-form select,
+.product-variation select {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: #fff;
+  color: #211d19;
+  font: inherit;
+}
+
+.admin-variations-section {
+  margin: 24px 0;
+  padding: 22px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: #faf8f5;
+}
+
+.admin-variations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.admin-variations-header h3 { margin: 0 0 6px; color: var(--texto); }
+.admin-variations-header p,
+.admin-variations-empty { color: var(--texto-suave); }
+.admin-variations-header button,
+.admin-remove-variation {
+  padding: 10px 14px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--texto);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-variations-list { display: grid; gap: 14px; }
+.admin-variation-row {
+  display: grid;
+  grid-template-columns: minmax(170px, .7fr) minmax(240px, 1.3fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+.admin-remove-variation { color: #9d2b2b; border-color: #dfb3b3; }
+.admin-product-variations { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+
+/* VARIAÇÕES NA PÁGINA DO PRODUTO */
+.product-variations {
+  display: grid;
+  gap: 14px;
+  margin: 22px 0;
+}
+.product-variation { display: grid; gap: 7px; text-align: left; }
+.product-variation span { color: var(--texto); font-weight: 700; }
+
+/* VARIAÇÕES NO CARRINHO E PEDIDOS */
+.cart-item-variations,
+.pedido-item-variacoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 8px;
+}
+.cart-item-variations span,
+.pedido-item-variacoes small {
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: #f5f0e8;
+  color: #4c443c;
+}
+
+@media (max-width: 760px) {
+  .admin-variations-header { flex-direction: column; }
+  .admin-variation-row { grid-template-columns: 1fr; }
+}

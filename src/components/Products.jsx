@@ -144,6 +144,15 @@ function Products({ categoriaInicial = "Todos" }) {
           <option value="Pulseiras">
             Pulseiras
           </option>
+
+          <option value="Tornozeleiras">
+            Tornozeleiras
+          </option>
+
+          <option value="Kits">
+            Kits
+          </option>
+
         </select>
       </div>
 

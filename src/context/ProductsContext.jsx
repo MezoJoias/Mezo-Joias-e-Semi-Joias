@@ -111,109 +111,6 @@ export function ProductsProvider({ children }) {
   };
 }, []);
 
-  const migrarProdutosAntigos = async () => {
-    const produtosSalvos =
-      localStorage.getItem("mezu-produtos");
-
-    let produtosAntigos = produtosIniciais;
-
-    if (produtosSalvos) {
-      try {
-        const produtosConvertidos =
-          JSON.parse(produtosSalvos);
-
-        if (
-          Array.isArray(produtosConvertidos) &&
-          produtosConvertidos.length > 0
-        ) {
-          produtosAntigos =
-            produtosConvertidos;
-        }
-      } catch (erro) {
-        console.error(
-          "Erro ao ler produtos antigos:",
-          erro
-        );
-      }
-    }
-
-    if (
-      !Array.isArray(produtosAntigos) ||
-      produtosAntigos.length === 0
-    ) {
-      throw new Error(
-        "Nenhum produto antigo foi encontrado."
-      );
-    }
-
-    const { data: produtosExistentes, error: erroBusca } =
-      await supabase
-        .from("produtos")
-        .select("nome, imagem");
-
-    if (erroBusca) {
-      throw erroBusca;
-    }
-
-    const produtosParaMigrar =
-      produtosAntigos
-        .filter((produtoAntigo) => {
-          return !produtosExistentes?.some(
-            (produtoExistente) =>
-              produtoExistente.nome ===
-                produtoAntigo.nome &&
-              produtoExistente.imagem ===
-                produtoAntigo.imagem
-          );
-        })
-        .map((produto) => ({
-          nome: produto.nome || "Produto sem nome",
-          preco: produto.preco || "",
-          categoria:
-            produto.categoria || "Outros",
-          descricao:
-            produto.descricao || "",
-          imagem:
-            produto.imagem || "",
-          imagens: Array.isArray(
-            produto.imagens
-          )
-            ? produto.imagens
-            : produto.imagem
-              ? [produto.imagem]
-              : [],
-        }));
-
-    if (produtosParaMigrar.length === 0) {
-      await buscarProdutos();
-
-      return {
-        quantidade: 0,
-        mensagem:
-          "Todos os produtos antigos já estão no Supabase.",
-      };
-    }
-
-    const { data, error } = await supabase
-      .from("produtos")
-      .insert(produtosParaMigrar)
-      .select();
-
-    if (error) {
-      throw error;
-    }
-
-    await buscarProdutos();
-
-    return {
-      quantidade: data?.length || 0,
-      produtos: data || [],
-      mensagem: `${
-        data?.length || 0
-      } produtos migrados com sucesso.`,
-    };
-  };
-
   const adicionarProduto = async (
     novoProduto
   ) => {
@@ -227,6 +124,7 @@ export function ProductsProvider({ children }) {
           novoProduto.descricao || "",
         imagem: novoProduto.imagem,
         imagens: novoProduto.imagens || [],
+        variacoes: novoProduto.variacoes || [],
       })
       .select()
       .single();
@@ -258,6 +156,8 @@ export function ProductsProvider({ children }) {
         imagem: produtoAtualizado.imagem,
         imagens:
           produtoAtualizado.imagens || [],
+        variacoes:
+          produtoAtualizado.variacoes || [],
       })
       .eq("id", produtoAtualizado.id)
       .select()
@@ -301,7 +201,6 @@ export function ProductsProvider({ children }) {
         produtos,
         carregandoProdutos,
         buscarProdutos,
-        migrarProdutosAntigos,
         adicionarProduto,
         editarProduto,
         excluirProduto,

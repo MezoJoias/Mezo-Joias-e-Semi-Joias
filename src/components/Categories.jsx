@@ -1,25 +1,5 @@
-const categorias = [
-  {
-    nome: "Anéis",
-    icone: "💍",
-    texto: "Peças delicadas para todos os momentos.",
-  },
-  {
-    nome: "Colares",
-    icone: "📿",
-    texto: "Modelos que destacam sua personalidade.",
-  },
-  {
-    nome: "Brincos",
-    icone: "✨",
-    texto: "Detalhes que transformam qualquer produção.",
-  },
-  {
-    nome: "Pulseiras",
-    icone: "💎",
-    texto: "Elegância e charme para o seu dia.",
-  },
-];
+import { categorias } from "../data/categorias";
+
 
 function Categories({
   categoriaSelecionada,
