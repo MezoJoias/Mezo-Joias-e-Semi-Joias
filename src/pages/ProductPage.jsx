@@ -67,7 +67,7 @@ function ProductPage() {
   };
 
   const comprarPeloWhatsApp = () => {
-    const telefone = "5548988148768";
+    const telefone = "5551980486979";
 
     const mensagem = `
 Olá! Tenho interesse neste produto:

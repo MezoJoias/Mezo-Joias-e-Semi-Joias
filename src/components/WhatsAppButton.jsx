@@ -1,5 +1,5 @@
 function WhatsAppButton() {
-  const telefone = "5548988148768";
+  const telefone = "5551980486979";
 
   const mensagem =
     "Olá! Vim pelo site da Mezo Joias e gostaria de mais informações.";

@@ -25,7 +25,7 @@ function Footer() {
           <h3>Atendimento</h3>
 
           <a
-            href="https://wa.me/5548988148768"
+            href="https://wa.me/5551980486979"
             target="_blank"
             rel="noreferrer"
           >

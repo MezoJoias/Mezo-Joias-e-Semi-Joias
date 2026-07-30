@@ -153,7 +153,7 @@ function Carrinho() {
         total,
       });
 
-      const telefoneLoja = "5548988148768";
+      const telefoneLoja = "5551980486979";
 
       const listaProdutos = itensDoCarrinho
         .map((item) => {

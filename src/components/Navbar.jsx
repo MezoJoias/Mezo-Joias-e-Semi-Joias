@@ -51,7 +51,7 @@ function Navbar() {
 
         <li>
           <a
-            href="https://wa.me/5548988148768"
+            href="https://wa.me/5551980486979"
             target="_blank"
             rel="noreferrer"
             onClick={fecharMenu}
