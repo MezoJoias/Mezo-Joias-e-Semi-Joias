@@ -58,10 +58,22 @@ textarea {
   text-decoration: none;
 
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 25px;
+  font-size: 20px;
   font-weight: 600;
 
   white-space: nowrap;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-img {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
 }
 
 .nav-menu {

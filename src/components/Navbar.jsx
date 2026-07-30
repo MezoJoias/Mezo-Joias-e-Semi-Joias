@@ -10,9 +10,10 @@ function Navbar() {
 
   return (
     <nav className="navbar">
-      <Link to="/" className="logo" onClick={fecharMenu}>
-        💎 Mezo Joias
-      </Link>
+     <Link to="/" className="logo">
+  <img src="/logo.png" alt="Mezo Joias" className="logo-img" />
+  <span>💎 Mezo Joias e Semi-Joias</span>
+</Link>
 
       <button
         type="button"
