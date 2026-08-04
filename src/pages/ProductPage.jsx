@@ -4,7 +4,6 @@ import { Link, useParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import { CartContext } from "../context/CartContext";
 import { ProductsContext } from "../context/ProductsContext";
-import "./ProductPage.css";
 
 function ProductPage() {
   const { id } = useParams();
