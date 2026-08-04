@@ -90,12 +90,30 @@ export async function atualizarStatusPedido(id, status) {
 }
 
 export async function excluirPedido(id) {
-  const { error } = await supabase.from("pedidos").delete().eq("id", id);
+  const { data, error } = await supabase
+    .from("pedidos")
+    .delete()
+    .eq("id", id)
+    .select("id");
 
   if (error) {
-    console.error("Erro ao excluir pedido:", error);
-    throw new Error("Não foi possível excluir o pedido.");
+    console.error(
+      "Erro ao excluir pedido:",
+      error
+    );
+
+    throw new Error(
+      "Não foi possível excluir o pedido."
+    );
   }
+
+  if (!data || data.length === 0) {
+    throw new Error(
+      "O Supabase não permitiu excluir o pedido. Verifique a política de DELETE."
+    );
+  }
+
+  return data[0];
 }
 
 export function assinarPedidos(aoAlterar) {
