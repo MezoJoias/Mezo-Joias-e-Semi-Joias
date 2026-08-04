@@ -1,9 +1,15 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import ProductCard from "../components/ProductCard";
 import { CartContext } from "../context/CartContext";
 import { ProductsContext } from "../context/ProductsContext";
+import {
+  converterPreco,
+  formatarPreco,
+  normalizarVariacoes,
+  obterPrecoSelecionado,
+} from "../utils/variacoes";
 
 function ProductPage() {
   const { id } = useParams();
@@ -20,6 +26,16 @@ function ProductPage() {
     setVariacoesSelecionadas({});
   }, [produto]);
 
+  const variacoes = useMemo(
+    () => normalizarVariacoes(produto?.variacoes),
+    [produto?.variacoes]
+  );
+
+  const precoAtual = useMemo(
+    () => obterPrecoSelecionado(produto, variacoesSelecionadas),
+    [produto, variacoesSelecionadas]
+  );
+
   if (!produto) {
     return (
       <main className="product-not-found">
@@ -30,7 +46,6 @@ function ProductPage() {
     );
   }
 
-  const variacoes = Array.isArray(produto.variacoes) ? produto.variacoes : [];
   const imagensDoProduto =
     produto.imagens?.length > 0 ? produto.imagens : [produto.imagem];
   const produtosRelacionados = produtos
@@ -44,21 +59,31 @@ function ProductPage() {
     const faltando = variacoes.find(
       (variacao) => !variacoesSelecionadas[variacao.nome]
     );
+
     if (faltando) {
       alert(`Selecione a opção de ${faltando.nome}.`);
       return false;
     }
+
     return true;
   };
 
   const adicionarProduto = () => {
     if (!validarVariacoes()) return;
-    adicionarAoCarrinho(produto.id, variacoesSelecionadas);
+
+    adicionarAoCarrinho({
+      id: produto.id,
+      variacoesSelecionadas,
+      precoSelecionado: precoAtual,
+      precoFormatado: formatarPreco(precoAtual),
+    });
+
     alert(`${produto.nome} foi adicionado ao carrinho!`);
   };
 
   const comprarPeloWhatsApp = () => {
     if (!validarVariacoes()) return;
+
     const telefone = "5551980486979";
     const textoVariacoes = Object.entries(variacoesSelecionadas)
       .map(([nome, valor]) => `${nome}: ${valor}`)
@@ -68,11 +93,11 @@ Olá! Tenho interesse neste produto:
 
 Produto: ${produto.nome}
 Código: ${produto.id}
-${textoVariacoes ? `${textoVariacoes}\n` : ""}Preço: ${produto.preco}
+${textoVariacoes ? `${textoVariacoes}\n` : ""}Preço: ${formatarPreco(precoAtual)}
     `.trim();
-    window.open(
-      `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`,
-      "_blank"
+
+    window.location.assign(
+      `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`
     );
   };
 
@@ -113,7 +138,9 @@ ${textoVariacoes ? `${textoVariacoes}\n` : ""}Preço: ${produto.preco}
             <h1>{produto.nome}</h1>
             <p className="product-code">Código do produto: {produto.id}</p>
             <p className="product-description">{produto.descricao}</p>
-            <strong className="product-page-price">{produto.preco}</strong>
+            <strong className="product-page-price">
+              {formatarPreco(precoAtual)}
+            </strong>
 
             {variacoes.length > 0 && (
               <div className="product-variations">
@@ -130,8 +157,13 @@ ${textoVariacoes ? `${textoVariacoes}\n` : ""}Preço: ${produto.preco}
                       }
                     >
                       <option value="">Selecione</option>
-                      {(variacao.opcoes || []).map((opcao) => (
-                        <option key={opcao} value={opcao}>{opcao}</option>
+                      {variacao.opcoes.map((opcao) => (
+                        <option key={opcao.nome} value={opcao.nome}>
+                          {opcao.nome}
+                          {opcao.preco !== ""
+                            ? ` — ${formatarPreco(converterPreco(opcao.preco))}`
+                            : ""}
+                        </option>
                       ))}
                     </select>
                   </label>

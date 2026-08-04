@@ -22,10 +22,16 @@ function CartProvider({ children }) {
     try {
       const salvo = localStorage.getItem("mezo-carrinho");
       const itens = salvo ? JSON.parse(salvo) : [];
+
       return Array.isArray(itens)
         ? itens.map((item) => ({
             ...item,
             variacoesSelecionadas: item.variacoesSelecionadas || {},
+            precoSelecionado:
+              item.precoSelecionado === undefined
+                ? null
+                : item.precoSelecionado,
+            precoFormatado: item.precoFormatado || "",
             chaveItem:
               item.chaveItem ||
               criarChaveItem(item.id, item.variacoesSelecionadas || {}),
@@ -41,12 +47,13 @@ function CartProvider({ children }) {
   }, [carrinho]);
 
   const adicionarAoCarrinho = (produtoOuId, variacoesSelecionadas = {}) => {
-    const id =
-      typeof produtoOuId === "object" ? produtoOuId.id : produtoOuId;
-    const variacoes =
-      typeof produtoOuId === "object"
-        ? produtoOuId.variacoesSelecionadas || variacoesSelecionadas
-        : variacoesSelecionadas;
+    const objeto =
+      typeof produtoOuId === "object" && produtoOuId !== null
+        ? produtoOuId
+        : { id: produtoOuId, variacoesSelecionadas };
+
+    const id = objeto.id;
+    const variacoes = objeto.variacoesSelecionadas || variacoesSelecionadas;
     const chaveItem = criarChaveItem(id, variacoes);
 
     setCarrinho((carrinhoAtual) => {
@@ -68,6 +75,11 @@ function CartProvider({ children }) {
           id,
           quantidade: 1,
           variacoesSelecionadas: variacoes,
+          precoSelecionado:
+            objeto.precoSelecionado === undefined
+              ? null
+              : objeto.precoSelecionado,
+          precoFormatado: objeto.precoFormatado || "",
           chaveItem,
         },
       ];

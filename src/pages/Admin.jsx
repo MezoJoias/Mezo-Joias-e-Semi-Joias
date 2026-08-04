@@ -7,6 +7,7 @@ import { AuthContext } from "../context/AuthContext";
 import { ProductsContext } from "../context/ProductsContext";
 import { nomesCategorias } from "../data/categorias";
 import { uploadImagemProduto } from "../services/storage";
+import { normalizarVariacoes } from "../utils/variacoes";
 
 const estadoInicial = {
   nome: "",
@@ -17,17 +18,6 @@ const estadoInicial = {
   imagens: [],
   variacoes: [],
 };
-
-function normalizarVariacoes(variacoes = []) {
-  return (Array.isArray(variacoes) ? variacoes : [])
-    .map((variacao) => ({
-      nome: String(variacao.nome || "").trim(),
-      opcoes: (Array.isArray(variacao.opcoes) ? variacao.opcoes : [])
-        .map((opcao) => String(opcao).trim())
-        .filter(Boolean),
-    }))
-    .filter((variacao) => variacao.nome && variacao.opcoes.length > 0);
-}
 
 function Admin() {
   const { sair } = useContext(AuthContext);
@@ -53,23 +43,72 @@ function Admin() {
   const adicionarVariacao = () => {
     setFormulario((estadoAtual) => ({
       ...estadoAtual,
-      variacoes: [...estadoAtual.variacoes, { nome: "", opcoesTexto: "" }],
+      variacoes: [
+        ...estadoAtual.variacoes,
+        { nome: "", opcoes: [{ nome: "", preco: "" }] },
+      ],
     }));
   };
 
-  const atualizarVariacao = (index, campo, valor) => {
+  const atualizarNomeVariacao = (variacaoIndex, valor) => {
     setFormulario((estadoAtual) => ({
       ...estadoAtual,
-      variacoes: estadoAtual.variacoes.map((variacao, indice) =>
-        indice === index ? { ...variacao, [campo]: valor } : variacao
+      variacoes: estadoAtual.variacoes.map((variacao, index) =>
+        index === variacaoIndex ? { ...variacao, nome: valor } : variacao
       ),
     }));
   };
 
-  const removerVariacao = (index) => {
+  const adicionarOpcao = (variacaoIndex) => {
     setFormulario((estadoAtual) => ({
       ...estadoAtual,
-      variacoes: estadoAtual.variacoes.filter((_, indice) => indice !== index),
+      variacoes: estadoAtual.variacoes.map((variacao, index) =>
+        index === variacaoIndex
+          ? {
+              ...variacao,
+              opcoes: [...variacao.opcoes, { nome: "", preco: "" }],
+            }
+          : variacao
+      ),
+    }));
+  };
+
+  const atualizarOpcao = (variacaoIndex, opcaoIndex, campo, valor) => {
+    setFormulario((estadoAtual) => ({
+      ...estadoAtual,
+      variacoes: estadoAtual.variacoes.map((variacao, index) =>
+        index === variacaoIndex
+          ? {
+              ...variacao,
+              opcoes: variacao.opcoes.map((opcao, indice) =>
+                indice === opcaoIndex ? { ...opcao, [campo]: valor } : opcao
+              ),
+            }
+          : variacao
+      ),
+    }));
+  };
+
+  const removerOpcao = (variacaoIndex, opcaoIndex) => {
+    setFormulario((estadoAtual) => ({
+      ...estadoAtual,
+      variacoes: estadoAtual.variacoes.map((variacao, index) =>
+        index === variacaoIndex
+          ? {
+              ...variacao,
+              opcoes: variacao.opcoes.filter((_, indice) => indice !== opcaoIndex),
+            }
+          : variacao
+      ),
+    }));
+  };
+
+  const removerVariacao = (variacaoIndex) => {
+    setFormulario((estadoAtual) => ({
+      ...estadoAtual,
+      variacoes: estadoAtual.variacoes.filter(
+        (_, index) => index !== variacaoIndex
+      ),
     }));
   };
 
@@ -86,23 +125,26 @@ function Admin() {
       return;
     }
 
-    const variacoesInvalidas = formulario.variacoes.some((variacao) => {
-      const opcoes = String(variacao.opcoesTexto || "")
-        .split(",")
-        .map((opcao) => opcao.trim())
-        .filter(Boolean);
-      return !String(variacao.nome || "").trim() || opcoes.length === 0;
-    });
+    const variacoesInvalidas = formulario.variacoes.some(
+      (variacao) =>
+        !String(variacao.nome || "").trim() ||
+        !Array.isArray(variacao.opcoes) ||
+        variacao.opcoes.length === 0 ||
+        variacao.opcoes.some((opcao) => !String(opcao.nome || "").trim())
+    );
 
     if (variacoesInvalidas) {
-      alert("Preencha o nome e pelo menos uma opção em cada variação.");
+      alert("Preencha o nome da variação e o nome de todas as opções.");
       return;
     }
 
     try {
       setEnviando(true);
+
       let urlImagem = formulario.imagem;
-      if (arquivoImagem) urlImagem = await uploadImagemProduto(arquivoImagem);
+      if (arquivoImagem) {
+        urlImagem = await uploadImagemProduto(arquivoImagem);
+      }
 
       const imagensExtrasExistentes = formulario.imagens.filter(
         (imagem) => typeof imagem === "string" && imagem.trim()
@@ -114,14 +156,16 @@ function Admin() {
         urlImagem,
         ...imagensExtrasExistentes,
         ...novasUrlsImagensExtras,
-      ].filter((imagem, index, lista) => imagem && lista.indexOf(imagem) === index);
+      ].filter(
+        (imagem, index, lista) => imagem && lista.indexOf(imagem) === index
+      );
 
       const variacoes = formulario.variacoes.map((variacao) => ({
         nome: variacao.nome.trim(),
-        opcoes: variacao.opcoesTexto
-          .split(",")
-          .map((opcao) => opcao.trim())
-          .filter(Boolean),
+        opcoes: variacao.opcoes.map((opcao) => ({
+          nome: opcao.nome.trim(),
+          preco: String(opcao.preco || "").trim(),
+        })),
       }));
 
       const dadosProduto = {
@@ -155,13 +199,10 @@ function Admin() {
     setProdutoEditando(produto.id);
     setArquivoImagem(null);
     setArquivosImagensExtras([]);
+
     const imagensAdicionais = (produto.imagens || []).filter(
       (imagem) => imagem !== produto.imagem
     );
-    const variacoes = normalizarVariacoes(produto.variacoes).map((variacao) => ({
-      nome: variacao.nome,
-      opcoesTexto: variacao.opcoes.join(", "),
-    }));
 
     setFormulario({
       nome: produto.nome || "",
@@ -170,8 +211,12 @@ function Admin() {
       descricao: produto.descricao || "",
       imagem: produto.imagem || "",
       imagens: imagensAdicionais,
-      variacoes,
+      variacoes: normalizarVariacoes(produto.variacoes).map((variacao) => ({
+        nome: variacao.nome,
+        opcoes: variacao.opcoes.map((opcao) => ({ ...opcao })),
+      })),
     });
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -182,9 +227,15 @@ function Admin() {
     setArquivosImagensExtras([]);
   };
 
-  const confirmarExclusao = (produto) => {
-    if (window.confirm(`Deseja excluir o produto "${produto.nome}"?`)) {
-      excluirProduto(produto.id);
+  const confirmarExclusao = async (produto) => {
+    if (!window.confirm(`Deseja excluir o produto "${produto.nome}"?`)) {
+      return;
+    }
+
+    try {
+      await excluirProduto(produto.id);
+    } catch (erro) {
+      alert(erro?.message || "Não foi possível excluir o produto.");
     }
   };
 
@@ -205,15 +256,15 @@ function Admin() {
           <div className="admin-form-grid">
             <label>
               Nome do produto
-              <input type="text" name="nome" value={formulario.nome} onChange={atualizarCampo} placeholder="Ex.: Anel Dourado" />
+              <input type="text" name="nome" value={formulario.nome} onChange={atualizarCampo} placeholder="Ex.: Pulseira Dourada" disabled={enviando} />
             </label>
             <label>
-              Preço
-              <input type="text" name="preco" value={formulario.preco} onChange={atualizarCampo} placeholder="Ex.: R$ 129,90" />
+              Preço base
+              <input type="text" name="preco" value={formulario.preco} onChange={atualizarCampo} placeholder="Ex.: 39,90" disabled={enviando} />
             </label>
             <label>
               Categoria
-              <select name="categoria" value={formulario.categoria} onChange={atualizarCampo}>
+              <select name="categoria" value={formulario.categoria} onChange={atualizarCampo} disabled={enviando}>
                 <option value="">Selecione uma categoria</option>
                 {nomesCategorias.map((categoria) => (
                   <option key={categoria} value={categoria}>{categoria}</option>
@@ -224,51 +275,127 @@ function Admin() {
 
           <label>
             Descrição
-            <textarea name="descricao" value={formulario.descricao} onChange={atualizarCampo} placeholder="Descreva o produto..." rows="5" />
+            <textarea name="descricao" value={formulario.descricao} onChange={atualizarCampo} placeholder="Descreva o produto..." rows="5" disabled={enviando} />
           </label>
 
           <section className="admin-variations-section">
             <div className="admin-variations-header">
               <div>
                 <h3>Variações do produto</h3>
-                <p>Ex.: Tamanho com opções 17, 18, 19 ou Cor com opções Prata, Dourado.</p>
+                <p>O preço da opção substitui o preço base. Deixe vazio quando a opção não mudar o valor.</p>
               </div>
-              <button type="button" onClick={adicionarVariacao}>+ Adicionar variação</button>
+              <button type="button" onClick={adicionarVariacao} disabled={enviando}>+ Adicionar variação</button>
             </div>
 
             {formulario.variacoes.length === 0 ? (
               <p className="admin-variations-empty">Este produto não possui variações.</p>
             ) : (
               <div className="admin-variations-list">
-                {formulario.variacoes.map((variacao, index) => (
-                  <div className="admin-variation-row" key={index}>
-                    <label>
-                      Nome da variação
-                      <input
-                        type="text"
-                        value={variacao.nome}
-                        onChange={(evento) => atualizarVariacao(index, "nome", evento.target.value)}
-                        placeholder="Ex.: Tamanho"
-                      />
-                    </label>
-                    <label>
-                      Opções separadas por vírgula
-                      <input
-                        type="text"
-                        value={variacao.opcoesTexto}
-                        onChange={(evento) => atualizarVariacao(index, "opcoesTexto", evento.target.value)}
-                        placeholder="Ex.: 17, 18, 19, 20"
-                      />
-                    </label>
-                    <button type="button" className="admin-remove-variation" onClick={() => removerVariacao(index)}>Remover</button>
-                  </div>
+                {formulario.variacoes.map((variacao, variacaoIndex) => (
+                  <article className="admin-variation-card" key={variacaoIndex}>
+                    <div className="admin-variation-card-header">
+                      <label>
+                        Nome da variação
+                        <input
+                          type="text"
+                          value={variacao.nome}
+                          onChange={(evento) =>
+                            atualizarNomeVariacao(variacaoIndex, evento.target.value)
+                          }
+                          placeholder="Ex.: Quantidade"
+                          disabled={enviando}
+                        />
+                      </label>
+                      <button type="button" className="admin-remove-variation" onClick={() => removerVariacao(variacaoIndex)} disabled={enviando}>Remover variação</button>
+                    </div>
+
+                    <div className="admin-variation-options-heading">
+                      <span>Opção</span>
+                      <span>Preço da opção</span>
+                      <span></span>
+                    </div>
+
+                    <div className="admin-variation-options-list">
+                      {variacao.opcoes.map((opcao, opcaoIndex) => (
+                        <div className="admin-variation-option-row" key={opcaoIndex}>
+                          <input
+                            type="text"
+                            value={opcao.nome}
+                            onChange={(evento) =>
+                              atualizarOpcao(
+                                variacaoIndex,
+                                opcaoIndex,
+                                "nome",
+                                evento.target.value
+                              )
+                            }
+                            placeholder="Ex.: Kit com 3"
+                            disabled={enviando}
+                          />
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={opcao.preco}
+                            onChange={(evento) =>
+                              atualizarOpcao(
+                                variacaoIndex,
+                                opcaoIndex,
+                                "preco",
+                                evento.target.value
+                              )
+                            }
+                            placeholder="Ex.: 105,00"
+                            disabled={enviando}
+                          />
+                          <button
+                            type="button"
+                            className="admin-remove-option"
+                            onClick={() => removerOpcao(variacaoIndex, opcaoIndex)}
+                            disabled={enviando || variacao.opcoes.length === 1}
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button type="button" className="admin-add-option" onClick={() => adicionarOpcao(variacaoIndex)} disabled={enviando}>+ Adicionar opção</button>
+                  </article>
                 ))}
               </div>
             )}
           </section>
 
-          <ImageUpload titulo="Imagem principal" imagem={formulario.imagem} aoSelecionar={setArquivoImagem} aoRemover={() => { setArquivoImagem(null); setFormulario((atual) => ({ ...atual, imagem: "" })); }} enviando={enviando} />
-          <MultiImageUpload imagensExistentes={formulario.imagens} arquivos={arquivosImagensExtras} aoSelecionar={(novos) => setArquivosImagensExtras((atuais) => [...atuais, ...novos])} aoRemoverArquivo={(index) => setArquivosImagensExtras((atuais) => atuais.filter((_, indice) => indice !== index))} aoRemoverImagemExistente={(index) => setFormulario((atual) => ({ ...atual, imagens: atual.imagens.filter((_, indice) => indice !== index) }))} enviando={enviando} />
+          <ImageUpload
+            titulo="Imagem principal"
+            imagem={formulario.imagem}
+            aoSelecionar={setArquivoImagem}
+            aoRemover={() => {
+              setArquivoImagem(null);
+              setFormulario((atual) => ({ ...atual, imagem: "" }));
+            }}
+            enviando={enviando}
+          />
+
+          <MultiImageUpload
+            imagensExistentes={formulario.imagens}
+            arquivos={arquivosImagensExtras}
+            aoSelecionar={(novos) =>
+              setArquivosImagensExtras((atuais) => [...atuais, ...novos])
+            }
+            aoRemoverArquivo={(index) =>
+              setArquivosImagensExtras((atuais) =>
+                atuais.filter((_, indice) => indice !== index)
+              )
+            }
+            aoRemoverImagemExistente={(index) =>
+              setFormulario((atual) => ({
+                ...atual,
+                imagens: atual.imagens.filter((_, indice) => indice !== index),
+              }))
+            }
+            enviando={enviando}
+          />
 
           <div className="admin-form-actions">
             <button type="submit" className="admin-save-button" disabled={enviando}>{enviando ? "Enviando..." : produtoEditando !== null ? "Salvar alterações" : "Cadastrar produto"}</button>
@@ -282,6 +409,7 @@ function Admin() {
           <div><span>Catálogo</span><h2>Produtos cadastrados</h2></div>
           <strong>{produtos.length} {produtos.length === 1 ? "produto" : "produtos"}</strong>
         </div>
+
         {produtos.length > 0 ? (
           <div className="admin-products-list">
             {produtos.map((produto) => (
@@ -292,10 +420,19 @@ function Admin() {
                   <h3>{produto.nome}</h3>
                   <strong>{produto.preco}</strong>
                   <p>{produto.descricao}</p>
-                  {Array.isArray(produto.variacoes) && produto.variacoes.length > 0 && (
+                  {normalizarVariacoes(produto.variacoes).length > 0 && (
                     <div className="admin-product-variations">
-                      {produto.variacoes.map((variacao) => (
-                        <small key={variacao.nome}><strong>{variacao.nome}:</strong> {(variacao.opcoes || []).join(", ")}</small>
+                      {normalizarVariacoes(produto.variacoes).map((variacao) => (
+                        <small key={variacao.nome}>
+                          <strong>{variacao.nome}:</strong>{" "}
+                          {variacao.opcoes
+                            .map((opcao) =>
+                              opcao.preco
+                                ? `${opcao.nome} (${opcao.preco})`
+                                : opcao.nome
+                            )
+                            .join(", ")}
+                        </small>
                       ))}
                     </div>
                   )}

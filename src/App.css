@@ -3009,3 +3009,101 @@ main.product-page .product-benefits p {
     overflow: hidden !important;
   }
 }
+
+/* =========================================================
+   PREÇO POR VARIAÇÃO — ADMINISTRATIVO
+   ========================================================= */
+.admin-variation-card {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid #ddd3c8;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.admin-variation-card-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+}
+
+.admin-variation-card-header label {
+  display: grid;
+  gap: 7px;
+}
+
+.admin-variation-options-heading,
+.admin-variation-option-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(120px, 0.8fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.admin-variation-options-heading {
+  padding: 0 2px;
+  color: var(--texto-suave);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-variation-options-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-variation-option-row input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-add-option,
+.admin-remove-option {
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-add-option {
+  width: fit-content;
+  border: 1px solid var(--dourado);
+  background: transparent;
+  color: var(--texto);
+}
+
+.admin-add-option:hover {
+  background: var(--dourado);
+}
+
+.admin-remove-option {
+  border: 1px solid #dfb3b3;
+  background: #fff7f7;
+  color: #9d2b2b;
+}
+
+.admin-remove-option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .admin-variation-card-header,
+  .admin-variation-option-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-variation-options-heading {
+    display: none;
+  }
+
+  .admin-remove-variation,
+  .admin-add-option,
+  .admin-remove-option {
+    width: 100%;
+  }
+}
